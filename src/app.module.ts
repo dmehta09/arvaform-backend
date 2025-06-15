@@ -1,11 +1,17 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerModule } from '@nestjs/throttler';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { appConfig } from './config/app.config';
+import { databaseConfig } from './config/database.config';
+import { DatabaseModule } from './database/database.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { JwtAuthGuard } from './modules/auth/guards/jwt.guard';
+import { UsersModule } from './modules/users/users.module';
 
 /**
  * Root application module for ArvaForm backend
@@ -15,9 +21,9 @@ import { appConfig } from './config/app.config';
 @Module({
   // Register all modules required for the application
   imports: [
-    // Load and validate environment variables using appConfig schema
+    // Load and validate environment variables using configuration schemas
     ConfigModule.forRoot({
-      load: [appConfig], // Load custom configuration
+      load: [appConfig, databaseConfig], // Load both app and database configurations
       isGlobal: true, // Make config available globally
       cache: true, // Enable config caching for performance
       envFilePath: ['.env.local', '.env'], // Load from these .env files
@@ -28,25 +34,8 @@ import { appConfig } from './config/app.config';
       },
     }),
 
-    // Asynchronously connect to MongoDB using Mongoose
-    MongooseModule.forRootAsync({
-      useFactory: () => ({
-        // Use MONGODB_URI from env or fallback to local instance
-        uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/arvaform',
-        retryWrites: true, // Enable retryable writes for reliability
-        w: 'majority', // Write concern: majority of nodes must acknowledge
-        // Connection pool settings for efficient resource usage
-        maxPoolSize: 10, // Maximum number of connections in pool
-        minPoolSize: 2, // Minimum number of connections in pool
-        maxIdleTimeMS: 30000, // Max idle time for a connection (ms)
-        serverSelectionTimeoutMS: 5000, // Timeout for server selection (ms)
-        socketTimeoutMS: 45000, // Socket inactivity timeout (ms)
-        // Disable command buffering for immediate error feedback
-        bufferCommands: false,
-        // Enable command monitoring for debugging and performance
-        monitorCommands: true,
-      }),
-    }),
+    // Database module with MongoDB and Mongoose integration
+    DatabaseModule,
 
     // Configure API rate limiting with multiple strategies
     ThrottlerModule.forRootAsync({
@@ -69,12 +58,31 @@ import { appConfig } from './config/app.config';
       ],
     }),
 
-    // Placeholder for future feature modules (e.g., UsersModule, FormsModule)
+    // Feature modules
+    AuthModule,
+    UsersModule,
+
+    // MongoDB connection
+    MongooseModule.forRootAsync({
+      useFactory: () => ({
+        uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/arvaform',
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      }),
+    }),
   ],
   // Register the main application controller
   controllers: [AppController],
   // Register the main application service provider
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Apply JWT guard globally to all routes
+    // Routes can be made public using @Public() decorator
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {
   /**

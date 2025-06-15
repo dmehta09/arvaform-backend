@@ -43,34 +43,25 @@ export interface AppConfig {
  */
 export const appConfig = registerAs('app', (): AppConfig => {
   // Helper function to parse boolean environment variables
-  const parseBoolean = (
-    value: string | undefined,
-    defaultValue: boolean,
-  ): boolean => {
+  const parseBoolean = (value: string | undefined, defaultValue: boolean): boolean => {
     if (value === undefined) return defaultValue;
     return value.toLowerCase() === 'true';
   };
 
   // Helper function to parse integer environment variables
-  const parseInteger = (
-    value: string | undefined,
-    defaultValue: number,
-  ): number => {
+  const parseInteger = (value: string | undefined, defaultValue: number): number => {
     if (value === undefined) return defaultValue;
     const parsed = parseInt(value, 10);
     return isNaN(parsed) ? defaultValue : parsed;
   };
 
   // Helper function to parse comma-separated values
-  const parseArray = (
-    value: string | undefined,
-    defaultValue: string[],
-  ): string[] => {
+  const parseArray = (value: string | undefined, defaultValue: string[]): string[] => {
     if (!value) return defaultValue;
     return value
       .split(',')
-      .map((item) => item.trim())
-      .filter((item) => item.length > 0);
+      .map(item => item.trim())
+      .filter(item => item.length > 0);
   };
 
   // Get environment variables with proper defaults
@@ -79,13 +70,10 @@ export const appConfig = registerAs('app', (): AppConfig => {
   const apiPrefix = process.env.API_PREFIX || 'api';
 
   // Database configuration
-  const mongodbUri =
-    process.env.MONGODB_URI || 'mongodb://localhost:27017/arvaform';
+  const mongodbUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/arvaform';
 
   // CORS configuration
-  const corsOrigins = parseArray(process.env.CORS_ORIGINS, [
-    'http://localhost:3000',
-  ]);
+  const corsOrigins = parseArray(process.env.CORS_ORIGINS, ['http://localhost:3000']);
 
   // Security configuration (optional)
   const jwtSecret = process.env.JWT_SECRET;
@@ -115,12 +103,8 @@ export const appConfig = registerAs('app', (): AppConfig => {
   };
 
   // Development tools configuration
-  const enableSwagger = parseBoolean(
-    process.env.ENABLE_SWAGGER,
-    nodeEnv === 'development',
-  );
-  const swaggerServerUrl =
-    process.env.SWAGGER_SERVER_URL || `http://localhost:${port}`;
+  const enableSwagger = parseBoolean(process.env.ENABLE_SWAGGER, nodeEnv === 'development');
+  const swaggerServerUrl = process.env.SWAGGER_SERVER_URL || `http://localhost:${port}`;
 
   // Validate critical configuration
   if (!mongodbUri) {

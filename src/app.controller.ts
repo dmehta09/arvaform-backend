@@ -135,8 +135,7 @@ export class AppController {
   })
   @ApiResponse({
     status: HttpStatus.SERVICE_UNAVAILABLE,
-    description:
-      'Service unhealthy - database connection issues or system problems',
+    description: 'Service unhealthy - database connection issues or system problems',
   })
   @Throttle({ short: { limit: 30, ttl: 1000 } }) // Allow frequent health checks
   async getHealth(): Promise<HealthCheckResponse> {

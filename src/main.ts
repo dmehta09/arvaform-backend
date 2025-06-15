@@ -1,7 +1,7 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 
 import { AppModule } from './app.module';
@@ -24,10 +24,7 @@ async function bootstrap(): Promise<void> {
   const port = configService.get<number>('PORT', 3001);
   const nodeEnv = configService.get<string>('NODE_ENV', 'development');
   const apiPrefix = configService.get<string>('API_PREFIX', 'api');
-  const corsOrigins = configService.get<string>(
-    'CORS_ORIGINS',
-    'http://localhost:3000',
-  );
+  const corsOrigins = configService.get<string>('CORS_ORIGINS', 'http://localhost:3000');
 
   // Set global API prefix
   app.setGlobalPrefix(apiPrefix);
@@ -64,7 +61,7 @@ async function bootstrap(): Promise<void> {
   logger.debug('Global validation pipe configured');
 
   // CORS configuration for frontend integration
-  const origins = corsOrigins.split(',').map((origin) => origin.trim());
+  const origins = corsOrigins.split(',').map(origin => origin.trim());
   app.enableCors({
     origin: origins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -114,9 +111,7 @@ async function bootstrap(): Promise<void> {
       customSiteTitle: 'ArvaForm API Documentation',
     });
 
-    logger.log(
-      `Swagger documentation available at: http://localhost:${port}/${apiPrefix}/docs`,
-    );
+    logger.log(`Swagger documentation available at: http://localhost:${port}/${apiPrefix}/docs`);
   }
 
   // Start the application
@@ -130,9 +125,7 @@ async function bootstrap(): Promise<void> {
   logger.log(`❤️  Health check: http://localhost:${port}/${apiPrefix}/health`);
 
   if (nodeEnv === 'development') {
-    logger.log(
-      `📚 API Documentation: http://localhost:${port}/${apiPrefix}/docs`,
-    );
+    logger.log(`📚 API Documentation: http://localhost:${port}/${apiPrefix}/docs`);
   }
 }
 

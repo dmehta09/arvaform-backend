@@ -1,0 +1,132 @@
+version: '3.8'
+
+# Docker Compose configuration for ArvaForm local development
+# Provides MongoDB database service for development and testing
+
+services:
+  # MongoDB service for development
+  mongodb:
+    image: mongo:7.0
+    container_name: arvaform-mongodb-dev
+    restart: unless-stopped
+
+    # Environment variables for MongoDB configuration
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: arvaform
+
+    # Port mapping - expose MongoDB on localhost:27017
+    ports:
+      - '27017:27017'
+
+    # Volume mounting for data persistence
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+
+    # MongoDB configuration
+    command: mongod --auth --bind_ip_all --quiet
+
+    # Health check to ensure MongoDB is ready
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    # Resource limits for development
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+    # Network configuration
+    networks:
+      - arvaform-network
+
+  # MongoDB Express for database administration (optional)
+  mongo-express:
+    image: mongo-express:latest
+    container_name: arvaform-mongo-express
+    restart: unless-stopped
+
+    # Depends on MongoDB service
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+    # Environment variables for MongoDB Express
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password123
+      ME_CONFIG_MONGODB_URL: mongodb://admin:password123@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+
+    # Port mapping - expose Mongo Express on localhost:8081
+    ports:
+      - '8081:8081'
+
+    # Network configuration
+    networks:
+      - arvaform-network
+
+  # Redis service for caching and sessions (optional)
+  redis:
+    image: redis:7.2-alpine
+    container_name: arvaform-redis-dev
+    restart: unless-stopped
+
+    # Port mapping - expose Redis on localhost:6379
+    ports:
+      - '6379:6379'
+
+    # Redis configuration
+    command: redis-server --appendonly yes --requirepass redis123
+
+    # Volume mounting for data persistence
+    volumes:
+      - redis_data:/data
+
+    # Health check
+    healthcheck:
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+
+    # Network configuration
+    networks:
+      - arvaform-network
+
+# Named volumes for data persistence
+volumes:
+  mongodb_data:
+    driver: local
+    name: arvaform-mongodb-data
+  mongodb_config:
+    driver: local
+    name: arvaform-mongodb-config
+  redis_data:
+    driver: local
+    name: arvaform-redis-data
+
+# Custom network for service communication
+networks:
+  arvaform-network:
+    driver: bridge
+    name: arvaform-dev-network

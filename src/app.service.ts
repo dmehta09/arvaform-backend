@@ -29,10 +29,7 @@ export class AppService {
    */
   getAppInfo(): AppInfoResponse {
     const apiPrefix = this.configService.get<string>('API_PREFIX', 'api');
-    const environment = this.configService.get<string>(
-      'NODE_ENV',
-      'development',
-    );
+    const environment = this.configService.get<string>('NODE_ENV', 'development');
 
     this.logger.debug('Providing application information');
 
@@ -44,10 +41,7 @@ export class AppService {
       timestamp: new Date().toISOString(),
       endpoints: {
         health: `/${apiPrefix}/health`,
-        docs:
-          environment === 'development'
-            ? `/${apiPrefix}/docs`
-            : 'Not available in production',
+        docs: environment === 'development' ? `/${apiPrefix}/docs` : 'Not available in production',
       },
     };
   }
@@ -71,10 +65,7 @@ export class AppService {
       const memoryInfo = {
         used: memoryUsage.heapUsed,
         total: memoryUsage.heapTotal,
-        percentage:
-          Math.round(
-            (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100 * 100,
-          ) / 100,
+        percentage: Math.round((memoryUsage.heapUsed / memoryUsage.heapTotal) * 100 * 100) / 100,
       };
 
       // Check database connectivity
@@ -141,8 +132,7 @@ export class AppService {
         };
       }
       // Check if connection is in ready state
-      const isConnected =
-        this.mongoConnection.readyState === ConnectionStates.connected;
+      const isConnected = this.mongoConnection.readyState === ConnectionStates.connected;
 
       if (isConnected) {
         // Perform a simple ping to verify database responsiveness
