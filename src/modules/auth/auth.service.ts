@@ -292,6 +292,98 @@ export class AuthService {
   }
 
   /**
+   * Finds or creates user account for OAuth authentication
+   */
+  async findOrCreateOAuthUser(oauthData: {
+    provider: 'google' | 'github';
+    providerId: string;
+    email: string;
+    name?: string;
+    avatar?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    connectedAt: Date;
+  }) {
+    try {
+      this.logger.debug(
+        `OAuth user lookup for provider: ${oauthData.provider}, email: ${oauthData.email}`,
+      );
+
+      // First, try to find existing user by email
+      let user = await this.usersService.findByEmail(oauthData.email);
+
+      if (user) {
+        // Check if this OAuth provider is already linked
+        const existingProvider = user.oauthProviders?.find(
+          p => p.provider === oauthData.provider && p.providerId === oauthData.providerId,
+        );
+
+        if (!existingProvider) {
+          // Link new OAuth provider to existing user
+          await this.usersService.addOAuthProvider(user._id as string, {
+            provider: oauthData.provider,
+            providerId: oauthData.providerId,
+            email: oauthData.email,
+            name: oauthData.name,
+            avatar: oauthData.avatar,
+            connectedAt: oauthData.connectedAt,
+            accessToken: oauthData.accessToken,
+            refreshToken: oauthData.refreshToken,
+          });
+
+          this.logger.log(
+            `OAuth provider ${oauthData.provider} linked to existing user: ${user.email}`,
+          );
+        } else {
+          // Update existing OAuth provider data
+          await this.usersService.updateOAuthProvider(user._id as string, oauthData.provider, {
+            accessToken: oauthData.accessToken,
+            refreshToken: oauthData.refreshToken,
+            connectedAt: oauthData.connectedAt,
+          });
+
+          this.logger.log(`OAuth provider ${oauthData.provider} updated for user: ${user.email}`);
+        }
+      } else {
+        // Create new user account with OAuth provider
+        const [firstName, lastName] = oauthData.name
+          ? oauthData.name.split(' ')
+          : ['OAuth', 'User'];
+
+        user = await this.usersService.createFromOAuth({
+          email: oauthData.email,
+          firstName: firstName || 'OAuth',
+          lastName: lastName || 'User',
+          oauthProvider: {
+            provider: oauthData.provider,
+            providerId: oauthData.providerId,
+            email: oauthData.email,
+            name: oauthData.name,
+            avatar: oauthData.avatar,
+            connectedAt: oauthData.connectedAt,
+            accessToken: oauthData.accessToken,
+            refreshToken: oauthData.refreshToken,
+          },
+        });
+
+        this.logger.log(`New user created from OAuth ${oauthData.provider}: ${user.email}`);
+      }
+
+      // Update last login time
+      if (user) {
+        await this.usersService.updateLastLogin(user._id as string);
+      }
+
+      return user;
+    } catch (error) {
+      this.logger.error(
+        `OAuth user creation/linking failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
    * Generates access and refresh tokens
    */
   private generateTokens(payload: { sub: string; email: string; status: string }): AuthTokens {

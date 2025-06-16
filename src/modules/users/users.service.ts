@@ -227,4 +227,149 @@ export class UsersService {
       timestamp: new Date().toISOString(),
     });
   }
+
+  /**
+   * Creates a new user from OAuth provider
+   */
+  async createFromOAuth(oauthData: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    oauthProvider: {
+      provider: 'google' | 'github';
+      providerId: string;
+      email: string;
+      name?: string;
+      avatar?: string;
+      connectedAt: Date;
+      accessToken?: string;
+      refreshToken?: string;
+    };
+  }): Promise<UserDocument> {
+    try {
+      // Check if user already exists
+      const existingUser = await this.userModel.findOne({ email: oauthData.email.toLowerCase() });
+      if (existingUser) {
+        throw new ConflictException('Email address is already registered');
+      }
+
+      // Create new user with OAuth provider
+      const newUser = new this.userModel({
+        email: oauthData.email.toLowerCase(),
+        firstName: oauthData.firstName,
+        lastName: oauthData.lastName,
+        password: 'oauth-placeholder', // OAuth users don't have passwords
+        status: 'active',
+        isEmailVerified: true, // OAuth providers verify email
+        oauthProviders: [oauthData.oauthProvider],
+        refreshTokens: [],
+      });
+
+      const savedUser = await newUser.save();
+
+      console.log('[USER] New OAuth user created:', {
+        userId: savedUser._id,
+        email: savedUser.email,
+        provider: oauthData.oauthProvider.provider,
+        timestamp: new Date().toISOString(),
+      });
+
+      return savedUser;
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+
+      console.error('[USER] Error creating OAuth user:', error);
+      throw new BadRequestException('Failed to create OAuth user account');
+    }
+  }
+
+  /**
+   * Adds OAuth provider to existing user
+   */
+  async addOAuthProvider(
+    userId: string,
+    providerData: {
+      provider: 'google' | 'github';
+      providerId: string;
+      email: string;
+      name?: string;
+      avatar?: string;
+      connectedAt: Date;
+      accessToken?: string;
+      refreshToken?: string;
+    },
+  ): Promise<void> {
+    try {
+      await this.userModel
+        .findByIdAndUpdate(userId, {
+          $push: { oauthProviders: providerData },
+        })
+        .exec();
+
+      console.log('[USER] OAuth provider added:', {
+        userId,
+        provider: providerData.provider,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('[USER] Error adding OAuth provider:', error);
+      throw new BadRequestException('Failed to add OAuth provider');
+    }
+  }
+
+  /**
+   * Updates OAuth provider data for user
+   */
+  async updateOAuthProvider(
+    userId: string,
+    provider: 'google' | 'github',
+    updateData: {
+      accessToken?: string;
+      refreshToken?: string;
+      connectedAt: Date;
+    },
+  ): Promise<void> {
+    try {
+      await this.userModel
+        .findOneAndUpdate(
+          { _id: userId, 'oauthProviders.provider': provider },
+          {
+            $set: {
+              'oauthProviders.$.accessToken': updateData.accessToken,
+              'oauthProviders.$.refreshToken': updateData.refreshToken,
+              'oauthProviders.$.connectedAt': updateData.connectedAt,
+            },
+          },
+        )
+        .exec();
+
+      console.log('[USER] OAuth provider updated:', {
+        userId,
+        provider,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('[USER] Error updating OAuth provider:', error);
+      throw new BadRequestException('Failed to update OAuth provider');
+    }
+  }
+
+  /**
+   * Updates last login time for user
+   */
+  async updateLastLogin(userId: string): Promise<void> {
+    try {
+      await this.userModel
+        .findByIdAndUpdate(userId, {
+          lastLoginAt: new Date(),
+          lastActiveAt: new Date(),
+        })
+        .exec();
+    } catch (error) {
+      console.error('[USER] Error updating last login:', error);
+      // Don't throw error for this operation as it's not critical
+    }
+  }
 }
