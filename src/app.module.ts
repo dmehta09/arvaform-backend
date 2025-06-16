@@ -66,8 +66,6 @@ import { UsersModule } from './modules/users/users.module';
     MongooseModule.forRootAsync({
       useFactory: () => ({
         uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/arvaform',
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
       }),
     }),
   ],
