@@ -14,10 +14,32 @@ export class GitHubStrategy extends PassportStrategy(Strategy, 'github') {
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
   ) {
+    // Get OAuth credentials with fallbacks for development
+    const clientID =
+      configService.get<string>('GITHUB_CLIENT_ID') || 'placeholder-github-client-id';
+    const clientSecret =
+      configService.get<string>('GITHUB_CLIENT_SECRET') || 'placeholder-github-client-secret';
+    const callbackURL =
+      configService.get<string>('GITHUB_CALLBACK_URL') ||
+      'http://localhost:3001/api/v1/auth/oauth/github/callback';
+
+    // Log warning if using placeholder values
+    if (
+      clientID === 'placeholder-github-client-id' ||
+      clientSecret === 'placeholder-github-client-secret'
+    ) {
+      console.warn(
+        '⚠️  GitHub OAuth credentials not configured. OAuth login will not work until proper credentials are set.',
+      );
+      console.warn(
+        '   Please set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET environment variables.',
+      );
+    }
+
     super({
-      clientID: configService.get<string>('GITHUB_CLIENT_ID')!,
-      clientSecret: configService.get<string>('GITHUB_CLIENT_SECRET')!,
-      callbackURL: configService.get<string>('GITHUB_CALLBACK_URL')!,
+      clientID,
+      clientSecret,
+      callbackURL,
       scope: ['user:email'],
     });
   }

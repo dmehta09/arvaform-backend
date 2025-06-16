@@ -18,6 +18,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiRateLimit,
+  AuthRateLimit,
+  RegistrationRateLimit,
+} from '../../common/decorators/rate-limit.decorator';
 import { AuthService, AuthTokens, LoginResponse } from './auth.service';
 import { ChangePasswordDto, LoginDto, RegisterDto } from './dto/auth.dto';
 import { JwtAuthGuard, Public } from './guards/jwt.guard';
@@ -43,6 +48,7 @@ export class AuthController {
    * @returns LoginResponse Newly registered user and tokens
    */
   @Public()
+  @RegistrationRateLimit() // Apply strict rate limiting for registration
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
@@ -75,6 +81,7 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 400, description: 'Validation failed or email already exists' })
+  @ApiResponse({ status: 429, description: 'Too many registration attempts' })
   async register(@Body() registerDto: RegisterDto): Promise<LoginResponse> {
     return this.authService.register(registerDto);
   }
@@ -86,6 +93,7 @@ export class AuthController {
    * @returns LoginResponse Authenticated user and tokens
    */
   @Public()
+  @AuthRateLimit() // Apply authentication rate limiting
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -118,6 +126,7 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials or account locked' })
+  @ApiResponse({ status: 429, description: 'Too many login attempts' })
   async login(@Body() loginDto: LoginDto): Promise<LoginResponse> {
     return this.authService.login(loginDto);
   }
@@ -129,6 +138,7 @@ export class AuthController {
    * @returns AuthTokens New access and refresh tokens
    */
   @Public()
+  @ApiRateLimit() // Apply standard API rate limiting
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -144,6 +154,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 200, description: 'Token refreshed successfully', type: Object })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
+  @ApiResponse({ status: 429, description: 'Too many refresh attempts' })
   async refresh(@Body('refreshToken') refreshToken: string): Promise<AuthTokens> {
     return this.authService.refreshTokens(refreshToken);
   }
@@ -156,6 +167,7 @@ export class AuthController {
    * @returns Success message
    */
   @UseGuards(JwtAuthGuard)
+  @ApiRateLimit() // Apply standard API rate limiting
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
@@ -176,6 +188,7 @@ export class AuthController {
     schema: { example: { message: 'Logout successful' } },
   })
   @ApiResponse({ status: 401, description: 'Authentication required' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
   async logout(
     @Request() req: { user: UserContext },
     @Body('refreshToken') refreshToken: string,

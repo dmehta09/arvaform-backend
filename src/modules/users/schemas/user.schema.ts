@@ -357,9 +357,9 @@ export class User extends Document {
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
-// Indexes for optimal query performance
-UserSchema.index({ email: 1 }); // Unique email lookup
-UserSchema.index({ status: 1 }); // Active users
+// Indexes for optimal query performance (removed duplicates for email and status)
+// Note: email index is already created by unique: true in @Prop decorator
+// Note: status index is already created by index: true in @Prop decorator
 UserSchema.index({ 'oauthProviders.provider': 1, 'oauthProviders.providerId': 1 }); // OAuth lookup
 UserSchema.index({ 'subscription.plan': 1, 'subscription.status': 1 }); // Subscription queries
 UserSchema.index({ organizations: 1 }); // Organization membership

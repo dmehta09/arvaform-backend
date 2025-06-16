@@ -6,17 +6,20 @@ import { ThrottlerModule } from '@nestjs/throttler';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { RateLimitGuard } from './common/guards/rate-limit.guard';
 import { appConfig } from './config/app.config';
 import { databaseConfig } from './config/database.config';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt.guard';
+import { CaptchaModule } from './modules/captcha/captcha.module';
 import { UsersModule } from './modules/users/users.module';
 
 /**
  * Root application module for ArvaForm backend
  * - Loads configuration, database, and rate limiting modules
  * - Registers core controllers and providers
+ * - Configures global security measures including rate limiting and CAPTCHA
  */
 @Module({
   // Register all modules required for the application
@@ -37,7 +40,7 @@ import { UsersModule } from './modules/users/users.module';
     // Database module with MongoDB and Mongoose integration
     DatabaseModule,
 
-    // Configure API rate limiting with multiple strategies
+    // Configure API rate limiting with multiple strategies for enhanced security
     ThrottlerModule.forRootAsync({
       useFactory: () => [
         {
@@ -55,12 +58,18 @@ import { UsersModule } from './modules/users/users.module';
           ttl: 3600000, // Time window: 1 hour
           limit: 1000, // Max 1000 requests per hour
         },
+        {
+          name: 'auth', // Strict limits for authentication endpoints
+          ttl: 60000, // Time window: 1 minute
+          limit: 5, // Max 5 auth attempts per minute
+        },
       ],
     }),
 
     // Feature modules
     AuthModule,
     UsersModule,
+    CaptchaModule, // CAPTCHA integration for enhanced security
 
     // MongoDB connection
     MongooseModule.forRootAsync({
@@ -80,6 +89,11 @@ import { UsersModule } from './modules/users/users.module';
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
+    // Apply global rate limiting with enhanced logging and security
+    {
+      provide: APP_GUARD,
+      useClass: RateLimitGuard,
+    },
   ],
 })
 export class AppModule {
@@ -90,5 +104,6 @@ export class AppModule {
   constructor() {
     // Output a message when the AppModule is initialized
     console.log('🏗️  AppModule initialized successfully');
+    console.log('🛡️  Security features enabled: Rate Limiting + CAPTCHA');
   }
 }

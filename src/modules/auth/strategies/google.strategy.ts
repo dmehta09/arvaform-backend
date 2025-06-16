@@ -14,10 +14,28 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
   ) {
+    // Get OAuth credentials with fallbacks for development
+    const clientID = configService.get<string>('GOOGLE_CLIENT_ID') || 'placeholder-client-id';
+    const clientSecret =
+      configService.get<string>('GOOGLE_CLIENT_SECRET') || 'placeholder-client-secret';
+    const callbackURL =
+      configService.get<string>('GOOGLE_CALLBACK_URL') ||
+      'http://localhost:3001/api/v1/auth/oauth/google/callback';
+
+    // Log warning if using placeholder values
+    if (clientID === 'placeholder-client-id' || clientSecret === 'placeholder-client-secret') {
+      console.warn(
+        '⚠️  Google OAuth credentials not configured. OAuth login will not work until proper credentials are set.',
+      );
+      console.warn(
+        '   Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.',
+      );
+    }
+
     super({
-      clientID: configService.get<string>('GOOGLE_CLIENT_ID')!,
-      clientSecret: configService.get<string>('GOOGLE_CLIENT_SECRET')!,
-      callbackURL: configService.get<string>('GOOGLE_CALLBACK_URL')!,
+      clientID,
+      clientSecret,
+      callbackURL,
       scope: ['email', 'profile'],
     });
   }
