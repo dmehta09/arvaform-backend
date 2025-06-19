@@ -13,6 +13,7 @@ import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt.guard';
 import { CaptchaModule } from './modules/captcha/captcha.module';
+import { ThemesModule } from './modules/themes/themes.module';
 import { UsersModule } from './modules/users/users.module';
 
 /**
@@ -70,6 +71,7 @@ import { UsersModule } from './modules/users/users.module';
     AuthModule,
     UsersModule,
     CaptchaModule, // CAPTCHA integration for enhanced security
+    ThemesModule, // Theme management module
 
     // MongoDB connection
     MongooseModule.forRootAsync({
