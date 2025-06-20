@@ -12,6 +12,7 @@ import { CreateFormDto } from './dto/create-form.dto';
 import { FormQueryDto } from './dto/form-query.dto';
 import { FormResponseDto } from './dto/form-response.dto';
 import { PaginatedFormsDto } from './dto/paginated-forms.dto';
+import { PublishFormDto, PublishResponseDto } from './dto/publish-form.dto';
 import { UpdateFormDto } from './dto/update-form.dto';
 import { Form, FormDocument } from './entities/form.entity';
 import { FormVersioningService } from './form-versioning.service';
@@ -680,7 +681,231 @@ export class FormsService {
   }
 
   /**
-   * Validate form before publishing
+   * Unpublish a form
+   * @param id - Form ID
+   * @param userId - User ID
+   * @returns Updated form
+   */
+  async unpublishForm(id: string, userId: string): Promise<FormResponseDto> {
+    this.logger.log(`Unpublishing form: ${id} by user: ${userId}`);
+
+    try {
+      const form = await this.formModel
+        .findOne({
+          _id: id,
+          deletedAt: { $exists: false },
+        })
+        .exec();
+
+      if (!form) {
+        throw new NotFoundException('Form not found');
+      }
+
+      // Check ownership
+      if (!(await this.isOwner(id, userId))) {
+        throw new ForbiddenException('Only form owners can unpublish forms');
+      }
+
+      // Create version before unpublishing
+      await this.formVersioningService.createVersion(id, userId, 'Form unpublished', 'manual');
+
+      // Update form to draft status and unpublished
+      const updatedForm = await this.formModel
+        .findByIdAndUpdate(
+          id,
+          {
+            status: 'draft',
+            'publishing.isPublished': false,
+          },
+          { new: true },
+        )
+        .exec();
+
+      if (!updatedForm) {
+        throw new NotFoundException('Form not found after update');
+      }
+
+      this.logger.log(`Form unpublished successfully: ${id}`);
+      return this.transformToResponseDto(updatedForm);
+    } catch (error: unknown) {
+      this.logger.error(`Failed to unpublish form ${id}:`, error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to unpublish form');
+    }
+  }
+
+  /**
+   * Update form publishing settings
+   * @param id - Form ID
+   * @param publishDto - Publishing configuration
+   * @param userId - User ID
+   * @returns Updated form with publishing details
+   */
+  async updatePublishingSettings(
+    id: string,
+    publishDto: PublishFormDto,
+    userId: string,
+  ): Promise<PublishResponseDto> {
+    this.logger.log(`Updating publishing settings for form: ${id} by user: ${userId}`);
+
+    try {
+      const form = await this.formModel
+        .findOne({
+          _id: id,
+          deletedAt: { $exists: false },
+        })
+        .exec();
+
+      if (!form) {
+        throw new NotFoundException('Form not found');
+      }
+
+      // Check ownership
+      if (!(await this.isOwner(id, userId))) {
+        throw new ForbiddenException('Only form owners can update publishing settings');
+      }
+
+      // Validate form before publishing if isPublished is true
+      if (publishDto.isPublished) {
+        this.validateFormForPublishing(form);
+      }
+
+      // Generate public URL if custom slug provided
+      let publicUrl = form.publishing?.publicUrl;
+      if (publishDto.customSlug) {
+        const slug = await this.generateUniqueSlug(publishDto.customSlug, userId);
+        publicUrl = `${process.env.PUBLIC_FORM_BASE_URL || 'https://forms.arva.app'}/f/${slug}`;
+
+        // Update form slug as well
+        await this.formModel.findByIdAndUpdate(id, { slug }).exec();
+      }
+
+      // Generate embed codes
+      const embedCode = this.generateEmbedCodes(id, form.slug);
+
+      // Create version before updating settings
+      await this.formVersioningService.createVersion(
+        id,
+        userId,
+        `Publishing settings updated: ${publishDto.isPublished ? 'published' : 'unpublished'}`,
+        'manual',
+      );
+
+      // Update publishing configuration
+      const updateData = {
+        status: publishDto.isPublished ? 'published' : 'draft',
+        'publishing.isPublished': publishDto.isPublished,
+        'publishing.publicUrl': publicUrl,
+        'publishing.sharing': publishDto.sharing,
+        'publishing.embedCode': embedCode,
+        'publishing.metaTitle': publishDto.metaTitle,
+        'publishing.metaDescription': publishDto.metaDescription,
+        'publishing.allowedDomains': publishDto.allowedDomains,
+      };
+
+      const updatedForm = await this.formModel
+        .findByIdAndUpdate(id, updateData, { new: true })
+        .exec();
+
+      if (!updatedForm) {
+        throw new NotFoundException('Form not found after update');
+      }
+
+      this.logger.log(`Publishing settings updated successfully for form: ${id}`);
+
+      // Return publishing response
+      return {
+        message: publishDto.isPublished
+          ? 'Form published successfully'
+          : 'Form unpublished successfully',
+        publicUrl: updatedForm.publishing?.publicUrl || '',
+        slug: updatedForm.slug,
+        isPublished: updatedForm.publishing?.isPublished || false,
+        publishedAt: new Date().toISOString(),
+        embedCode: updatedForm.publishing?.embedCode,
+      };
+    } catch (error: unknown) {
+      this.logger.error(`Failed to update publishing settings for form ${id}:`, error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to update publishing settings');
+    }
+  }
+
+  /**
+   * Get form publishing status and settings
+   * @param id - Form ID
+   * @param userId - User ID
+   * @returns Publishing configuration
+   */
+  async getPublishingSettings(id: string, userId: string): Promise<Record<string, unknown>> {
+    this.logger.log(`Getting publishing settings for form: ${id} by user: ${userId}`);
+
+    try {
+      const form = await this.formModel
+        .findOne({
+          _id: id,
+          deletedAt: { $exists: false },
+        })
+        .exec();
+
+      if (!form) {
+        throw new NotFoundException('Form not found');
+      }
+
+      // Check access (owners and collaborators can view publishing settings)
+      if (!(await this.hasAccess(form, userId))) {
+        throw new ForbiddenException('Access denied to form publishing settings');
+      }
+
+      return {
+        isPublished: form.publishing?.isPublished || false,
+        publicUrl: form.publishing?.publicUrl || '',
+        slug: form.slug,
+        sharing: form.publishing?.sharing || {
+          allowPublicAccess: true,
+          requireLogin: false,
+        },
+        embedCode: form.publishing?.embedCode || {},
+        metaTitle: form.publishing?.metaTitle,
+        metaDescription: form.publishing?.metaDescription,
+        allowedDomains: form.publishing?.allowedDomains || [],
+        publishedAt: form.status === 'published' ? new Date().toISOString() : null,
+      };
+    } catch (error: unknown) {
+      this.logger.error(`Failed to get publishing settings for form ${id}:`, error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to retrieve publishing settings');
+    }
+  }
+
+  /**
+   * Generate embed codes for a published form
+   * @param formId - Form ID
+   * @param slug - Form slug
+   * @returns Generated embed codes
+   */
+  private generateEmbedCodes(
+    formId: string,
+    slug: string,
+  ): { script: string; iframe: string; wordpress: string } {
+    const baseUrl = process.env.PUBLIC_FORM_BASE_URL || 'https://forms.arva.app';
+    const formUrl = `${baseUrl}/f/${slug}`;
+
+    return {
+      script: `<script src="${baseUrl}/embed/${formId}.js" async></script>`,
+      iframe: `<iframe src="${formUrl}" width="100%" height="600" frameborder="0" style="border:none;"></iframe>`,
+      wordpress: `[arvaform id="${formId}" slug="${slug}"]`,
+    };
+  }
+
+  /**
+   * Enhanced validation for form publishing with security checks
    * @param form - Form document
    */
   private validateFormForPublishing(form: FormDocument): void {
@@ -694,7 +919,30 @@ export class FormsService {
       throw new BadRequestException('Form must have a title to be published');
     }
 
-    // Additional validation rules can be added here
-    this.logger.log(`Form validation passed for form: ${String(form._id)}`);
+    // Check for suspicious content in form elements
+    const suspiciousPatterns = [
+      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+      /javascript:/gi,
+      /on\w+\s*=/gi,
+    ];
+
+    const elementsText = JSON.stringify(form.elements);
+    for (const pattern of suspiciousPatterns) {
+      if (pattern.test(elementsText)) {
+        throw new BadRequestException(
+          'Form contains potentially harmful content and cannot be published',
+        );
+      }
+    }
+
+    // Validate required fields have proper configuration
+    const requiredElements = form.elements.filter(el => el.required);
+    for (const element of requiredElements) {
+      if (!element.label || element.label.trim().length === 0) {
+        throw new BadRequestException(`Required field "${element.id}" must have a label`);
+      }
+    }
+
+    this.logger.log(`Enhanced form validation passed for form: ${String(form._id)}`);
   }
 }

@@ -361,6 +361,7 @@ export class FormIntegration {
 
 /**
  * Form Publishing Configuration subdocument schema
+ * Controls form publication and access settings
  */
 @Schema({ _id: false })
 export class FormPublishingConfig {
@@ -399,6 +400,15 @@ export class FormPublishingConfig {
     requireLogin: boolean;
     expiresAt?: Date;
   };
+
+  @Prop()
+  metaTitle?: string;
+
+  @Prop()
+  metaDescription?: string;
+
+  @Prop({ type: [String], default: [] })
+  allowedDomains: string[];
 }
 
 /**
