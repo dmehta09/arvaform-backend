@@ -280,28 +280,32 @@ export class FormSettings {
   };
 }
 
+@Schema({ _id: false })
+export class ThankYouPageConfig {
+  @Prop({
+    type: String,
+    enum: ['default', 'custom', 'redirect'],
+    default: 'default',
+  })
+  type: 'default' | 'custom' | 'redirect';
+
+  @Prop()
+  content?: string;
+
+  @Prop()
+  redirectUrl?: string;
+}
+
 /**
- * Post Submission Configuration subdocument schema
+ * Post-submission configuration subdocument schema
  */
 @Schema({ _id: false })
 export class PostSubmissionConfig {
   @Prop({
-    type: {
-      type: {
-        type: String,
-        enum: ['default', 'custom', 'redirect'],
-        default: 'default',
-      },
-      content: String,
-      redirectUrl: String,
-    },
+    type: ThankYouPageConfig,
     default: () => ({ type: 'default' }),
   })
-  thankYouPage: {
-    type: 'default' | 'custom' | 'redirect';
-    content?: string;
-    redirectUrl?: string;
-  };
+  thankYouPage: ThankYouPageConfig;
 
   @Prop({
     type: {

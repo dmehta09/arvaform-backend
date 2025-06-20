@@ -13,6 +13,8 @@ import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt.guard';
 import { CaptchaModule } from './modules/captcha/captcha.module';
+import { FormsModule } from './modules/forms/forms.module';
+import { SubmissionsModule } from './modules/submissions/submissions.module';
 import { ThemesModule } from './modules/themes/themes.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -71,6 +73,8 @@ import { UsersModule } from './modules/users/users.module';
     AuthModule,
     UsersModule,
     CaptchaModule, // CAPTCHA integration for enhanced security
+    FormsModule, // Form management and publishing
+    SubmissionsModule, // Form submissions and file uploads
     ThemesModule, // Theme management module
 
     // MongoDB connection

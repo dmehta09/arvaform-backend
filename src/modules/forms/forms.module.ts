@@ -24,6 +24,6 @@ import { FormOwnershipGuard } from './guards/form-ownership.guard';
     FormsInitializationService,
     FormOwnershipGuard,
   ],
-  exports: [FormsService, FormsRepository, FormVersioningService],
+  exports: [FormsService, FormsRepository, FormVersioningService, MongooseModule],
 })
 export class FormsModule {}

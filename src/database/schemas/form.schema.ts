@@ -271,6 +271,65 @@ export class ConditionalRule {
   isActive: boolean;
 }
 
+@Schema({ _id: false })
+export class ThankYouPageConfig {
+  @Prop({
+    type: String,
+    enum: ['default', 'custom', 'redirect'],
+    default: 'default',
+  })
+  type: 'default' | 'custom' | 'redirect';
+
+  @Prop()
+  content?: string;
+
+  @Prop()
+  redirectUrl?: string;
+}
+
+@Schema({ _id: false })
+export class PostSubmissionConfig {
+  @Prop({ type: ThankYouPageConfig, default: () => ({ type: 'default' }) })
+  thankYouPage: ThankYouPageConfig;
+
+  @Prop({
+    type: {
+      notifications: {
+        enabled: { type: Boolean, default: false },
+        recipients: [String],
+        template: String,
+        subject: String,
+      },
+      autoresponder: {
+        enabled: { type: Boolean, default: false },
+        template: String,
+        subject: String,
+        fromEmail: String,
+        fromName: String,
+      },
+    },
+    default: () => ({
+      notifications: { enabled: false },
+      autoresponder: { enabled: false },
+    }),
+  })
+  emails: {
+    notifications: {
+      enabled: boolean;
+      recipients: string[];
+      template: string;
+      subject: string;
+    };
+    autoresponder: {
+      enabled: boolean;
+      template: string;
+      subject: string;
+      fromEmail: string;
+      fromName: string;
+    };
+  };
+}
+
 /**
  * Main Form document schema
  * Represents a complete form with all its configuration and elements
@@ -424,28 +483,7 @@ export class Form extends Document {
   conditions: ConditionalRule[];
 
   @Prop({
-    type: {
-      thankYouPage: {
-        type: { type: String, enum: ['default', 'custom', 'redirect'], default: 'default' },
-        content: String,
-        redirectUrl: String,
-      },
-      emails: {
-        notifications: {
-          enabled: { type: Boolean, default: false },
-          recipients: [String],
-          template: String,
-          subject: String,
-        },
-        autoresponder: {
-          enabled: { type: Boolean, default: false },
-          template: String,
-          subject: String,
-          fromEmail: String,
-          fromName: String,
-        },
-      },
-    },
+    type: PostSubmissionConfig,
     default: () => ({
       thankYouPage: { type: 'default' },
       emails: {
@@ -454,28 +492,7 @@ export class Form extends Document {
       },
     }),
   })
-  postSubmission: {
-    thankYouPage: {
-      type: 'default' | 'custom' | 'redirect';
-      content?: string;
-      redirectUrl?: string;
-    };
-    emails: {
-      notifications: {
-        enabled: boolean;
-        recipients: string[];
-        template: string;
-        subject: string;
-      };
-      autoresponder: {
-        enabled: boolean;
-        template: string;
-        subject: string;
-        fromEmail: string;
-        fromName: string;
-      };
-    };
-  };
+  postSubmission: PostSubmissionConfig;
 
   @Prop([
     {
