@@ -240,6 +240,12 @@ export class Submission {
   @Prop({ type: [DigitalSignature], default: [] })
   signatures?: DigitalSignature[];
 
+  @Prop({ type: Number, required: false })
+  spamScore?: number;
+
+  @Prop({ type: Boolean, required: false })
+  gdprConsent?: boolean;
+
   @Prop({ default: Date.now, index: true })
   submittedAt: Date;
 

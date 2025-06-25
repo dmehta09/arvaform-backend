@@ -8,6 +8,7 @@ import { CaptchaModule } from '../captcha/captcha.module';
 
 import { FormsModule } from '../forms/forms.module';
 import { Submission, SubmissionSchema } from './entities/submission.entity';
+import { ExportService } from './services/export.service';
 import { FileUploadService } from './services/file-upload.service';
 import { SubmissionsController } from './submissions.controller';
 import { SubmissionsService } from './submissions.service';
@@ -60,7 +61,7 @@ import { SubmissionsService } from './submissions.service';
     CaptchaModule,
   ],
   controllers: [SubmissionsController],
-  providers: [SubmissionsService, FileUploadService],
-  exports: [SubmissionsService, FileUploadService],
+  providers: [SubmissionsService, FileUploadService, ExportService],
+  exports: [SubmissionsService, FileUploadService, ExportService],
 })
 export class SubmissionsModule {}
