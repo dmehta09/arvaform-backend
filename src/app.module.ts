@@ -10,6 +10,7 @@ import { RateLimitGuard } from './common/guards/rate-limit.guard';
 import { appConfig } from './config/app.config';
 import { databaseConfig } from './config/database.config';
 import { DatabaseModule } from './database/database.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt.guard';
 import { CaptchaModule } from './modules/captcha/captcha.module';
@@ -76,6 +77,7 @@ import { UsersModule } from './modules/users/users.module';
     FormsModule, // Form management and publishing
     SubmissionsModule, // Form submissions and file uploads
     ThemesModule, // Theme management module
+    AnalyticsModule, // Analytics and data aggregation module
 
     // MongoDB connection
     MongooseModule.forRootAsync({

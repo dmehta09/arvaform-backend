@@ -136,7 +136,7 @@ export class PaymentSubmissionDto {
     example: 2500,
   })
   @IsNotEmpty()
-  @Transform(({ value }) => parseInt(value))
+  @Transform(({ value }) => parseInt(String(value), 10))
   amount: number;
 
   @ApiProperty({
@@ -223,7 +223,10 @@ export class CreateSubmissionDto {
     example: false,
   })
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
+  @Transform(({ value }) => {
+    if (typeof value === 'boolean') return value;
+    return String(value).toLowerCase() === 'true';
+  })
   isDraft?: boolean;
 
   @ApiPropertyOptional({

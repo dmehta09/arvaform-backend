@@ -49,7 +49,7 @@ export class FormQueryDto {
   })
   @IsOptional()
   @Type(() => Number)
-  @Transform(({ value }) => parseInt(value, 10))
+  @Transform(({ value }) => parseInt(String(value), 10))
   @IsNumber({}, { message: 'Limit must be a number' })
   limit?: number = 10;
 

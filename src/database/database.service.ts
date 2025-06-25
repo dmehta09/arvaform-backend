@@ -5,6 +5,22 @@ import { Connection } from 'mongoose';
 import { DatabaseConfigType } from '../config/database.config';
 
 /**
+ * Interface for MongoDB server status (subset)
+ */
+interface ServerStatus {
+  connections: {
+    current: number;
+  };
+}
+
+/**
+ * Interface for MongoDB command started event
+ */
+interface CommandStartedEvent {
+  commandName: string;
+}
+
+/**
  * Database connection health status interface
  */
 export interface DatabaseHealth {
@@ -144,7 +160,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       }
 
       const adminDb = db.admin();
-      const serverStatus = await adminDb.serverStatus();
+      const serverStatus = (await adminDb.serverStatus()) as ServerStatus;
       const connections = serverStatus?.connections;
 
       return {
@@ -238,7 +254,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
     // Log query monitoring if enabled
     if (this.databaseConfig.debug && this.databaseConfig.logQueries) {
-      this.connection.on('command-started', event => {
+      this.connection.on('command-started', (event: CommandStartedEvent) => {
         this.logger.debug(`📝 DB Query: ${event.commandName}`);
       });
     }

@@ -375,27 +375,28 @@ UserSchema.index({
 });
 
 // Virtual for full name
-UserSchema.virtual('fullName').get(function () {
+UserSchema.virtual('fullName').get(function (this: UserDocument) {
   return `${this.firstName} ${this.lastName}`.trim();
 });
 
 // Virtual for account lock status
-UserSchema.virtual('isLocked').get(function () {
+UserSchema.virtual('isLocked').get(function (this: UserDocument) {
   return !!(this.lockUntil && this.lockUntil.getTime() > Date.now());
 });
 
 // Virtual for subscription status
-UserSchema.virtual('isSubscriptionActive').get(function () {
+UserSchema.virtual('isSubscriptionActive').get(function (this: UserDocument) {
   return this.subscription.status === 'active' || this.subscription.status === 'trial';
 });
 
 // Method to check OAuth provider connection
-UserSchema.methods.hasOAuthProvider = function (provider: string): boolean {
+UserSchema.methods.hasOAuthProvider = function (this: UserDocument, provider: string): boolean {
   return this.oauthProviders.some(p => p.provider === provider);
 };
 
 // Method to check usage limits
 UserSchema.methods.hasReachedLimit = function (
+  this: UserDocument,
   resource: keyof UserSubscription['limits'],
 ): boolean {
   return this.subscription.usage[resource] >= this.subscription.limits[resource];
@@ -403,6 +404,7 @@ UserSchema.methods.hasReachedLimit = function (
 
 // Method to increment usage
 UserSchema.methods.incrementUsage = function (
+  this: UserDocument,
   resource: keyof UserSubscription['usage'],
   amount: number = 1,
 ) {
@@ -411,7 +413,7 @@ UserSchema.methods.incrementUsage = function (
 };
 
 // Method to check if user can perform action based on subscription
-UserSchema.methods.canAccess = function (feature: string): boolean {
+UserSchema.methods.canAccess = function (this: UserDocument, feature: string): boolean {
   const featureMap = {
     advanced_integrations: ['premium', 'enterprise'],
     custom_branding: ['premium', 'enterprise'],
@@ -422,3 +424,38 @@ UserSchema.methods.canAccess = function (feature: string): boolean {
   const requiredPlans = featureMap[feature];
   return requiredPlans ? requiredPlans.includes(this.subscription.plan) : true;
 };
+
+// Method to update subscription details
+UserSchema.methods.updateSubscription = function (
+  this: UserDocument,
+  plan: 'basic' | 'premium' | 'enterprise',
+) {
+  try {
+    if (this.subscription.plan === plan) {
+      return this;
+    }
+    // Logic to update subscription, limits, features, etc.
+    this.subscription.plan = plan;
+    return this.save();
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Invalid plan')) {
+      // Create a custom error or return a specific value
+      throw new Error('Invalid subscription plan provided.');
+    }
+    throw error;
+  }
+};
+
+// Pre-save hook for validation and data consistency
+UserSchema.pre<UserDocument>('save', function (next) {
+  if (this.isModified('email')) {
+    this.email = this.email.toLowerCase();
+  }
+  // Add other pre-save logic here
+  next();
+});
+
+// Post-save hook for logging or event emission
+UserSchema.post<UserDocument>('save', function (doc) {
+  console.log(`User ${doc.email} saved.`);
+});

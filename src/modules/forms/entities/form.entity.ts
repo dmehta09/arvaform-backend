@@ -462,7 +462,6 @@ export class Form extends Document {
     lowercase: true,
     trim: true,
     match: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-    index: true,
   })
   slug: string;
 

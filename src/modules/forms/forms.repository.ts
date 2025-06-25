@@ -61,23 +61,25 @@ export class FormsRepository {
 
     // Add date range filters
     if (createdAfter || createdBefore) {
-      baseQuery.createdAt = {};
+      const dateFilter: FilterQuery<Date> = {};
       if (createdAfter) {
-        baseQuery.createdAt.$gte = new Date(createdAfter);
+        dateFilter.$gte = new Date(createdAfter);
       }
       if (createdBefore) {
-        baseQuery.createdAt.$lte = new Date(createdBefore);
+        dateFilter.$lte = new Date(createdBefore);
       }
+      baseQuery.createdAt = dateFilter;
     }
 
     if (updatedAfter || updatedBefore) {
-      baseQuery.updatedAt = {};
+      const dateFilter: FilterQuery<Date> = {};
       if (updatedAfter) {
-        baseQuery.updatedAt.$gte = new Date(updatedAfter);
+        dateFilter.$gte = new Date(updatedAfter);
       }
       if (updatedBefore) {
-        baseQuery.updatedAt.$lte = new Date(updatedBefore);
+        dateFilter.$lte = new Date(updatedBefore);
       }
+      baseQuery.updatedAt = dateFilter;
     }
 
     // Cursor-based pagination
@@ -137,7 +139,7 @@ export class FormsRepository {
       // Determine next cursor
       const nextCursor =
         hasNextPage && forms.length > 0
-          ? forms[forms.length - 1][this.getSortField(sortBy)].toISOString()
+          ? (forms[forms.length - 1][this.getSortField(sortBy)] as Date).toISOString()
           : null;
 
       this.logger.log(
@@ -164,9 +166,47 @@ export class FormsRepository {
         },
       };
     } catch (error: unknown) {
-      this.logger.error(`Failed to fetch paginated forms for user ${userId}:`, error);
+      this.logger.error(
+        `Failed to fetch paginated forms for user ${userId}:`,
+        error instanceof Error ? error.message : String(error),
+      );
       throw error;
     }
+  }
+
+  async create(form_data: Omit<Form, 'save'>): Promise<FormResponseDto> {
+    const createdForm = new this.formModel(form_data);
+    const savedForm = await createdForm.save();
+    return this.transformToResponseDto(savedForm);
+  }
+
+  async findAll(userId: string): Promise<FormResponseDto[]> {
+    const forms = await this.formModel
+      .find({
+        userId,
+        deletedAt: { $exists: false },
+      })
+      .sort({ updatedAt: -1 })
+      .exec();
+    return forms.map(form => this.transformToResponseDto(form));
+  }
+
+  async findById(id: string): Promise<FormDocument | null> {
+    return this.formModel.findById(id).exec();
+  }
+
+  async findOne(conditions: FilterQuery<FormDocument>): Promise<FormDocument | null> {
+    return this.formModel.findOne(conditions).exec();
+  }
+
+  async update(id: string, updateData: Partial<Form>): Promise<FormDocument | null> {
+    return this.formModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  }
+
+  async remove(id: string, userId: string): Promise<FormDocument | null> {
+    return this.formModel
+      .findByIdAndUpdate(id, { deletedAt: new Date(), deletedBy: userId }, { new: true })
+      .exec();
   }
 
   /**
@@ -188,7 +228,10 @@ export class FormsRepository {
 
       this.logger.log('Search indexes created successfully');
     } catch (error: unknown) {
-      this.logger.error('Failed to create search indexes:', error);
+      this.logger.error(
+        'Failed to create search indexes:',
+        error instanceof Error ? error.message : String(error),
+      );
       // Don't throw error to prevent application startup failure
     }
   }
@@ -232,72 +275,42 @@ export class FormsRepository {
    * @returns Form response DTO
    */
   private transformToResponseDto(form: FormDocument): FormResponseDto {
-    const formObject = form.toObject
-      ? form.toObject()
-      : (form as unknown as Record<string, unknown>);
+    interface TransformResult {
+      _id: string;
+      userId?: string;
+      organizationId?: string;
+      collaborators?: Array<{ userId: string; role: string; addedAt: Date; expiresAt?: Date }>;
+      settings?: {
+        theme?: {
+          themeId?: string;
+        };
+      };
+      deletedBy?: string;
+      [key: string]: unknown;
+    }
 
-    return {
-      _id: String(form._id),
-      title: form.title,
-      description: form.description,
-      slug: form.slug,
-      status: form.status,
-      userId: form.userId.toString(),
-      organizationId: form.organizationId?.toString(),
-      collaborators: form.collaborators.map(collab => ({
-        userId: collab.userId.toString(),
-        role: collab.role,
-        addedAt: collab.addedAt,
-        expiresAt: collab.expiresAt,
-      })),
-      settings: {
-        encryption: form.settings.encryption,
-        layout: form.settings.layout,
-        theme: form.settings.theme
-          ? {
-              themeId: form.settings.theme.themeId?.toString(),
-              customStyles: form.settings.theme.customStyles
-                ? {
-                    css: form.settings.theme.customStyles.css,
-                    variables: Object.fromEntries(
-                      form.settings.theme.customStyles.variables || new Map(),
-                    ),
-                  }
-                : undefined,
-            }
-          : undefined,
-        branding: form.settings.branding,
+    const formObject = form.toObject({
+      transform: (doc: unknown, ret: TransformResult): TransformResult => {
+        // Convert ObjectId fields to strings
+        ret._id = String(ret._id);
+        if (ret.userId) ret.userId = String(ret.userId);
+        if (ret.organizationId) ret.organizationId = String(ret.organizationId);
+        if (ret.collaborators && Array.isArray(ret.collaborators)) {
+          ret.collaborators = ret.collaborators.map(
+            (c: { userId: unknown; role: string; addedAt: Date; expiresAt?: Date }) => ({
+              ...c,
+              userId: String(c.userId),
+            }),
+          );
+        }
+        if (ret.settings?.theme?.themeId) {
+          ret.settings.theme.themeId = String(ret.settings.theme.themeId);
+        }
+        if (ret.deletedBy) ret.deletedBy = String(ret.deletedBy);
+        return ret;
       },
-      elements: form.elements.map(element => ({
-        id: element.id,
-        type: element.type,
-        label: element.label,
-        placeholder: element.placeholder,
-        helpText: element.helpText,
-        required: element.required,
-        validation: element.validation as Record<string, unknown> | undefined,
-        properties: element.properties as Record<string, unknown> | undefined,
-        styles: element.styles as Record<string, unknown> | undefined,
-        options: element.options,
-        order: element.order,
-        parentId: element.parentId,
-        createdAt: element.createdAt,
-        updatedAt: element.updatedAt,
-      })),
-      pages: form.pages,
-      conditions: form.conditions,
-      postSubmission: form.postSubmission,
-      integrations: form.integrations.map(integration => ({
-        type: integration.type,
-        config: integration.config as unknown as Record<string, unknown>,
-        isActive: integration.isActive,
-      })),
-      publishing: form.publishing,
-      analytics: form.analytics,
-      createdAt: (formObject.createdAt as Date) || new Date(),
-      updatedAt: (formObject.updatedAt as Date) || new Date(),
-      deletedAt: form.deletedAt,
-      deletedBy: form.deletedBy?.toString(),
-    };
+    }) as FormResponseDto;
+
+    return formObject;
   }
 }

@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types, Schema as MongooseSchema } from 'mongoose';
+import { Document, Schema as MongooseSchema, Types } from 'mongoose';
 
 /**
  * Permission document schema
@@ -356,17 +356,36 @@ OrganizationSchema.index({ 'members.userId': 1 }); // User's organizations
 OrganizationSchema.index({ status: 1 }); // Active organizations
 
 // Virtual for organization member count
-OrganizationSchema.virtual('memberCount').get(function () {
+OrganizationSchema.virtual('memberCount').get(function (this: OrganizationDocument) {
   return this.members ? this.members.length : 0;
 });
 
 // Method to check if user is organization member
-OrganizationSchema.methods.isMember = function (userId: Types.ObjectId): boolean {
+OrganizationSchema.methods.isMember = function (
+  this: OrganizationDocument,
+  userId: Types.ObjectId,
+): boolean {
   return this.members.some(member => member.userId.equals(userId));
 };
 
 // Method to get user's role in organization
-OrganizationSchema.methods.getUserRole = function (userId: Types.ObjectId): string | null {
+OrganizationSchema.methods.getUserRole = function (
+  this: OrganizationDocument,
+  userId: Types.ObjectId,
+): string | null {
   const member = this.members.find(member => member.userId.equals(userId));
   return member ? member.role : null;
 };
+
+// Method to find a member by user ID
+OrganizationSchema.methods.findMember = function (
+  this: OrganizationDocument,
+  userId: Types.ObjectId,
+) {
+  return this.members.find(member => member.userId.equals(userId));
+};
+
+// Virtual property to get all member user IDs
+OrganizationSchema.virtual('memberIds').get(function (this: OrganizationDocument) {
+  return this.members.map(member => member.userId);
+});

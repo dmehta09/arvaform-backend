@@ -362,9 +362,7 @@ export class FormsService {
    * @returns Form response DTO
    */
   private transformToResponseDto(form: FormDocument): FormResponseDto {
-    const formObject = form.toObject
-      ? form.toObject()
-      : (form as unknown as Record<string, unknown>);
+    const formObj = form.toObject() as Record<string, unknown>;
 
     return {
       _id: String(form._id),
@@ -424,8 +422,14 @@ export class FormsService {
       })),
       publishing: form.publishing,
       analytics: form.analytics,
-      createdAt: (formObject.createdAt as Date) || new Date(),
-      updatedAt: (formObject.updatedAt as Date) || new Date(),
+      createdAt:
+        formObj.createdAt instanceof Date
+          ? formObj.createdAt
+          : new Date((formObj.createdAt as string) || Date.now()),
+      updatedAt:
+        formObj.updatedAt instanceof Date
+          ? formObj.updatedAt
+          : new Date((formObj.updatedAt as string) || Date.now()),
       deletedAt: form.deletedAt,
       deletedBy: form.deletedBy?.toString(),
     };

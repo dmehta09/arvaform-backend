@@ -102,8 +102,20 @@ export class MigrationRunner {
         name: String(doc.name || ''),
         version: String(doc.version || ''),
         status: doc.status as MigrationStatus,
-        appliedAt: doc.appliedAt ? new Date(doc.appliedAt) : undefined,
-        rolledBackAt: doc.rolledBackAt ? new Date(doc.rolledBackAt) : undefined,
+        appliedAt:
+          doc.appliedAt &&
+          (typeof doc.appliedAt === 'string' ||
+            typeof doc.appliedAt === 'number' ||
+            doc.appliedAt instanceof Date)
+            ? new Date(doc.appliedAt)
+            : undefined,
+        rolledBackAt:
+          doc.rolledBackAt &&
+          (typeof doc.rolledBackAt === 'string' ||
+            typeof doc.rolledBackAt === 'number' ||
+            doc.rolledBackAt instanceof Date)
+            ? new Date(doc.rolledBackAt)
+            : undefined,
         executionTime: typeof doc.executionTime === 'number' ? doc.executionTime : undefined,
         error: doc.error ? String(doc.error) : undefined,
       }));

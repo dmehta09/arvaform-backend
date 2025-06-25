@@ -344,7 +344,7 @@ export class SubmissionsController {
     } catch (error) {
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: error.message,
+        message: error instanceof Error ? error.message : String(error),
       });
     }
   }
@@ -416,12 +416,13 @@ export class SubmissionsController {
 
       res.send(buffer);
     } catch (error) {
-      if (error.message.includes('expired')) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('expired')) {
         res.status(HttpStatus.GONE).json({
           success: false,
           message: 'Download link has expired',
         });
-      } else if (error.message.includes('not found')) {
+      } else if (errorMessage.includes('not found')) {
         res.status(HttpStatus.NOT_FOUND).json({
           success: false,
           message: 'Export file not found',

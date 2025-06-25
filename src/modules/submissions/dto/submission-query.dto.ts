@@ -67,7 +67,7 @@ export class SubmissionQueryDto {
     example: '2025-01-01T00:00:00.000Z',
   })
   @IsOptional()
-  @Transform(({ value }) => (value ? new Date(value) : undefined))
+  @Transform(({ value }) => (value ? new Date(String(value)) : undefined))
   startDate?: Date;
 
   @ApiPropertyOptional({
@@ -75,6 +75,6 @@ export class SubmissionQueryDto {
     example: '2025-12-31T23:59:59.999Z',
   })
   @IsOptional()
-  @Transform(({ value }) => (value ? new Date(value) : undefined))
+  @Transform(({ value }) => (value ? new Date(String(value)) : undefined))
   endDate?: Date;
 }

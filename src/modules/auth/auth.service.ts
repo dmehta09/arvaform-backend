@@ -433,8 +433,11 @@ export class AuthService {
       }
 
       return payload;
-    } catch {
-      throw new UnauthorizedException('Invalid refresh token');
+    } catch (error) {
+      this.logger.warn(
+        `Refresh token verification failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }
 

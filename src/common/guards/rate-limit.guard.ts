@@ -19,7 +19,7 @@ export class RateLimitGuard extends ThrottlerGuard {
     const request = context.switchToHttp().getRequest<Request>();
     const clientIP = this.getClientIP(request);
     const userAgent = request.get('User-Agent') || 'Unknown';
-    const endpoint = `${request.method} ${request.route?.path || request.url}`;
+    const endpoint = `${request.method} ${request.path}`;
 
     try {
       const canProceed = await super.canActivate(context);

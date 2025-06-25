@@ -535,7 +535,7 @@ export class SubmissionsService {
    * @returns SubmissionResponseDto
    */
   private mapToResponseDto(submission: SubmissionDocument): SubmissionResponseDto {
-    const submissionObj = submission.toObject();
+    const submissionObj = submission.toObject() as Record<string, unknown>;
 
     return {
       id: (submission._id as Types.ObjectId).toString(),
@@ -562,8 +562,8 @@ export class SubmissionsService {
       },
       signatures: submission.signatures,
       submittedAt: submission.submittedAt,
-      createdAt: submissionObj.createdAt || submission.submittedAt,
-      updatedAt: submissionObj.updatedAt || submission.submittedAt,
+      createdAt: (submissionObj.createdAt as Date) || submission.submittedAt,
+      updatedAt: (submissionObj.updatedAt as Date) || submission.submittedAt,
     };
   }
 }

@@ -140,7 +140,7 @@ export class ExportService {
     void this.processBackgroundExport(jobId, _userId).catch(error => {
       this.logger.error(`Background export ${jobId} failed:`, error);
       job.status = 'failed';
-      job.error = error.message;
+      job.error = error instanceof Error ? error.message : String(error);
     });
 
     return this.mapJobToResponse(job);
@@ -202,7 +202,7 @@ export class ExportService {
       }
     } catch (error) {
       job.status = 'failed';
-      job.error = error.message;
+      job.error = error instanceof Error ? error.message : String(error);
       this.logger.error(`Export ${jobId} failed:`, error);
     }
   }
