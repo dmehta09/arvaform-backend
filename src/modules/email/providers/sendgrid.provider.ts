@@ -50,9 +50,10 @@ export class SendGridProvider implements EmailProvider {
       sgMail.setApiKey(this.emailConfig.sendgridApiKey);
       this.initialized = true;
       this.logger.log('SendGrid provider initialized successfully');
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error('Failed to initialize SendGrid provider', error);
-      throw new Error(`SendGrid initialization failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`SendGrid initialization failed: ${errorMessage}`);
     }
   }
 

@@ -1,0 +1,409 @@
+<html lang='{{language}}'>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Welcome to {{company_name}}!</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333333;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px 0;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+        position: relative;
+      }
+
+      .header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+      }
+
+      .header-content {
+        position: relative;
+        z-index: 1;
+      }
+
+      .welcome-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+        display: block;
+      }
+
+      .header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .header p {
+        font-size: 18px;
+        opacity: 0.95;
+        font-weight: 300;
+      }
+
+      .content {
+        padding: 40px 30px;
+      }
+
+      .greeting {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .greeting h2 {
+        font-size: 24px;
+        color: #333;
+        margin-bottom: 15px;
+      }
+
+      .greeting p {
+        font-size: 16px;
+        color: #666;
+        line-height: 1.7;
+      }
+
+      .features {
+        margin: 30px 0;
+      }
+
+      .feature-list {
+        list-style: none;
+        margin: 20px 0;
+      }
+
+      .feature-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+      }
+
+      .feature-icon {
+        font-size: 20px;
+        margin-right: 15px;
+        color: #667eea;
+      }
+
+      .feature-text {
+        flex: 1;
+      }
+
+      .feature-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+      }
+
+      .feature-description {
+        font-size: 14px;
+        color: #666;
+      }
+
+      .cta-section {
+        text-align: center;
+        margin: 35px 0;
+        padding: 25px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+      }
+
+      .cta-title {
+        font-size: 20px;
+        color: #333;
+        margin-bottom: 15px;
+        font-weight: 600;
+      }
+
+      .btn-primary {
+        display: inline-block;
+        padding: 15px 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-secondary {
+        display: inline-block;
+        padding: 12px 25px;
+        background-color: transparent;
+        color: #667eea;
+        text-decoration: none;
+        border: 2px solid #667eea;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        margin: 10px 5px;
+        transition: all 0.3s ease;
+      }
+
+      .btn-secondary:hover {
+        background-color: #667eea;
+        color: white;
+      }
+
+      .social-links {
+        text-align: center;
+        margin: 30px 0;
+      }
+
+      .social-links h3 {
+        font-size: 18px;
+        color: #333;
+        margin-bottom: 15px;
+      }
+
+      .social-icon {
+        display: inline-block;
+        margin: 0 10px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 50%;
+        color: #667eea;
+        text-decoration: none;
+        font-size: 18px;
+        transition: all 0.3s ease;
+      }
+
+      .social-icon:hover {
+        background-color: #667eea;
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      .footer {
+        background-color: #343a40;
+        color: #ffffff;
+        padding: 25px 30px;
+        text-align: center;
+        font-size: 14px;
+      }
+
+      .footer a {
+        color: #adb5bd;
+        text-decoration: none;
+      }
+
+      .footer a:hover {
+        color: #ffffff;
+      }
+
+      .footer-links {
+        margin: 15px 0;
+      }
+
+      .footer-links a {
+        margin: 0 10px;
+      }
+
+      /* Responsive design */
+      @media only screen and (max-width: 600px) {
+        body {
+          padding: 10px 0;
+        }
+
+        .container {
+          border-radius: 0;
+          margin: 0 10px;
+        }
+
+        .header,
+        .content,
+        .footer {
+          padding: 30px 20px;
+        }
+
+        .header h1 {
+          font-size: 28px;
+        }
+
+        .welcome-icon {
+          font-size: 40px;
+        }
+
+        .feature-item {
+          flex-direction: column;
+          text-align: center;
+        }
+
+        .feature-icon {
+          margin: 0 0 10px 0;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+          display: block;
+          margin: 10px 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <!-- Header -->
+      <div class='header'>
+        <div class='header-content'>
+          <span class='welcome-icon'>🎉</span>
+          <h1>Welcome to {{company_name}}!</h1>
+          <p>We're thrilled to have you on board</p>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class='content'>
+        <!-- Greeting -->
+        <div class='greeting'>
+          <h2>Hello {{user_name}}!</h2>
+          <p>Thank you for joining
+            {{company_name}}. We're excited to help you create amazing forms and collect valuable
+            data. Your account is now active and ready to use.</p>
+        </div>
+
+        <!-- Features -->
+        <div class='features'>
+          <ul class='feature-list'>
+            <li class='feature-item'>
+              <span class='feature-icon'>📝</span>
+              <div class='feature-text'>
+                <div class='feature-title'>Easy Form Builder</div>
+                <div class='feature-description'>Create beautiful forms with our drag-and-drop
+                  builder</div>
+              </div>
+            </li>
+            <li class='feature-item'>
+              <span class='feature-icon'>📊</span>
+              <div class='feature-text'>
+                <div class='feature-title'>Real-time Analytics</div>
+                <div class='feature-description'>Track submissions and analyze data instantly</div>
+              </div>
+            </li>
+            <li class='feature-item'>
+              <span class='feature-icon'>🔗</span>
+              <div class='feature-text'>
+                <div class='feature-title'>Powerful Integrations</div>
+                <div class='feature-description'>Connect with your favorite tools and services</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Call to Action -->
+        <div class='cta-section'>
+          <h3 class='cta-title'>Ready to create your first form?</h3>
+          {{#if dashboard_url}}
+            <a href='{{url dashboard_url}}' class='btn-primary'>Get Started</a>
+          {{/if}}
+          {{#if help_url}}
+            <a href='{{url help_url}}' class='btn-secondary'>View Tutorials</a>
+          {{/if}}
+          {{#if documentation_url}}
+            <a href='{{url documentation_url}}' class='btn-secondary'>Read Docs</a>
+          {{/if}}
+        </div>
+
+        <!-- Account Details -->
+        {{#if account_details}}
+          <div
+            style='background-color: #e8f5e8; padding: 20px; border-radius: 8px; margin: 25px 0;'
+          >
+            <h3 style='color: #2d5d2d; margin-bottom: 10px;'>Account Information</h3>
+            <p style='color: #2d5d2d; margin: 0;'>
+              <strong>Email:</strong>
+              {{user_email}}<br />
+              <strong>Plan:</strong>
+              {{subscription_plan}}<br />
+              {{#if trial_ends}}
+                <strong>Trial Period:</strong>
+                {{trial_days}}
+                days remaining
+              {{/if}}
+            </p>
+          </div>
+        {{/if}}
+
+        <!-- Social Links -->
+        {{#if social_links}}
+          <div class='social-links'>
+            <h3>Stay Connected</h3>
+            {{#if twitter_url}}
+              <a href='{{url twitter_url}}' class='social-icon'>🐦</a>
+            {{/if}}
+            {{#if facebook_url}}
+              <a href='{{url facebook_url}}' class='social-icon'>📘</a>
+            {{/if}}
+            {{#if linkedin_url}}
+              <a href='{{url linkedin_url}}' class='social-icon'>💼</a>
+            {{/if}}
+            {{#if youtube_url}}
+              <a href='{{url youtube_url}}' class='social-icon'>📺</a>
+            {{/if}}
+          </div>
+        {{/if}}
+      </div>
+
+      <!-- Footer -->
+      <div class='footer'>
+        <p><strong>{{company_name}}</strong> - Making form building simple and powerful</p>
+        {{#if company_address}}
+          <p style='margin-top: 10px; color: #adb5bd;'>{{company_address}}</p>
+        {{/if}}
+
+        <div class='footer-links'>
+          {{#if support_url}}
+            <a href='{{url support_url}}'>Support</a>
+          {{/if}}
+          {{#if privacy_url}}
+            <a href='{{url privacy_url}}'>Privacy Policy</a>
+          {{/if}}
+          {{#if terms_url}}
+            <a href='{{url terms_url}}'>Terms of Service</a>
+          {{/if}}
+          {{#if unsubscribe_url}}
+            <a href='{{url unsubscribe_url}}'>Unsubscribe</a>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

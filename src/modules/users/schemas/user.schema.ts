@@ -437,12 +437,8 @@ UserSchema.methods.updateSubscription = function (
     // Logic to update subscription, limits, features, etc.
     this.subscription.plan = plan;
     return this.save();
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('Invalid plan')) {
-      // Create a custom error or return a specific value
-      throw new Error('Invalid subscription plan provided.');
-    }
-    throw error;
+  } catch (error: unknown) {
+    return error instanceof Error && error.message.includes('Invalid plan');
   }
 };
 

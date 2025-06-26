@@ -341,10 +341,10 @@ export class SubmissionsController {
         data: result,
         message: 'Export job started successfully',
       });
-    } catch (error) {
+    } catch (error: unknown) {
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: error instanceof Error ? error.message : String(error),
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -415,8 +415,8 @@ export class SubmissionsController {
       res.setHeader('Content-Length', buffer.length);
 
       res.send(buffer);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       if (errorMessage.includes('expired')) {
         res.status(HttpStatus.GONE).json({
           success: false,

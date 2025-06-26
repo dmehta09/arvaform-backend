@@ -1,0 +1,235 @@
+<html lang='{{language}}'>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>New Form Submission - {{form_name}}</title>
+    <style>
+      /* Reset and base styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333333;
+        background-color: #f8f9fa;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px 20px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        font-size: 16px;
+        opacity: 0.9;
+      }
+
+      .content {
+        padding: 30px 20px;
+      }
+
+      .form-info {
+        background-color: #f8f9fa;
+        border-left: 4px solid #667eea;
+        padding: 20px;
+        margin-bottom: 25px;
+        border-radius: 0 8px 8px 0;
+      }
+
+      .form-info h2 {
+        font-size: 20px;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .form-data {
+        margin: 25px 0;
+      }
+
+      .field-group {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .field-group:last-child {
+        border-bottom: none;
+      }
+
+      .field-label {
+        font-weight: 600;
+        color: #495057;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+      }
+
+      .field-value {
+        font-size: 16px;
+        color: #333;
+        word-wrap: break-word;
+      }
+
+      .actions {
+        background-color: #f8f9fa;
+        padding: 20px;
+        text-align: center;
+        margin: 25px 0;
+        border-radius: 8px;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 16px;
+        transition: transform 0.2s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .footer {
+        background-color: #6c757d;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        font-size: 14px;
+      }
+
+      .footer a {
+        color: #ffffff;
+        text-decoration: underline;
+      }
+
+      /* Responsive design */
+      @media only screen and (max-width: 600px) {
+        .container {
+          border-radius: 0;
+          margin: 0;
+        }
+
+        .header,
+        .content,
+        .footer {
+          padding: 20px 15px;
+        }
+
+        .header h1 {
+          font-size: 24px;
+        }
+
+        .form-info {
+          padding: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <!-- Header -->
+      <div class='header'>
+        <h1>📝 New Form Submission</h1>
+        <p>You have received a new submission for your form</p>
+      </div>
+
+      <!-- Content -->
+      <div class='content'>
+        <!-- Form Information -->
+        <div class='form-info'>
+          <h2>{{form_name}}</h2>
+          <p><strong>Submitted:</strong> {{formatDate submission_date 'long'}}</p>
+          {{#if submitter_email}}
+            <p><strong>From:</strong> {{submitter_email}}</p>
+          {{/if}}
+          {{#if submission_id}}
+            <p><strong>Submission ID:</strong> {{submission_id}}</p>
+          {{/if}}
+        </div>
+
+        <!-- Form Data -->
+        <div class='form-data'>
+          <h3 style='margin-bottom: 20px; color: #333;'>Submitted Data:</h3>
+
+          {{#each form_fields}}
+            <div class='field-group'>
+              <div class='field-label'>{{this.label}}</div>
+              <div class='field-value'>
+                {{#if_eq this.type 'email'}}
+                  <a href='mailto:{{this.value}}' style='color: #667eea;'>{{this.value}}</a>
+                {{else if_eq this.type 'url'}}
+                  <a
+                    href='{{this.value}}'
+                    target='_blank'
+                    style='color: #667eea;'
+                  >{{this.value}}</a>
+                {{else if_eq this.type 'file'}}
+                  📎
+                  {{this.value}}
+                {{else}}
+                  {{this.value}}
+                {{/if_eq}}
+              </div>
+            </div>
+          {{/each}}
+        </div>
+
+        <!-- Actions -->
+        {{#if dashboard_url}}
+          <div class='actions'>
+            <a href='{{url dashboard_url}}' class='btn'>View in Dashboard</a>
+          </div>
+        {{/if}}
+
+        <!-- Additional Information -->
+        {{#if additional_info}}
+          <div
+            style='background-color: #e3f2fd; padding: 15px; border-radius: 6px; margin-top: 20px;'
+          >
+            <p style='color: #1976d2; font-size: 14px; margin: 0;'>
+              <strong>Note:</strong>
+              {{additional_info}}
+            </p>
+          </div>
+        {{/if}}
+      </div>
+
+      <!-- Footer -->
+      <div class='footer'>
+        <p>This notification was sent by <strong>{{company_name}}</strong></p>
+        {{#if unsubscribe_url}}
+          <p style='margin-top: 10px;'>
+            <a href='{{url unsubscribe_url}}'>Unsubscribe from notifications</a>
+          </p>
+        {{/if}}
+      </div>
+    </div>
+  </body>
+</html>

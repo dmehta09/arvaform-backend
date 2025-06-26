@@ -223,7 +223,7 @@ export class CreateSubmissionDto {
     example: false,
   })
   @IsOptional()
-  @Transform(({ value }) => {
+  @Transform(({ value }: { value: boolean | string }) => {
     if (typeof value === 'boolean') return value;
     return String(value).toLowerCase() === 'true';
   })
