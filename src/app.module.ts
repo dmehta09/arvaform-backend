@@ -7,6 +7,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { RateLimitGuard } from './common/guards/rate-limit.guard';
+import { RealTimeGateway } from './common/websocket/websocket.gateway';
 import { appConfig } from './config/app.config';
 import { databaseConfig } from './config/database.config';
 import { DatabaseModule } from './database/database.module';
@@ -24,6 +25,7 @@ import { UsersModule } from './modules/users/users.module';
  * - Loads configuration, database, and rate limiting modules
  * - Registers core controllers and providers
  * - Configures global security measures including rate limiting and CAPTCHA
+ * - Enables real-time WebSocket functionality
  */
 @Module({
   // Register all modules required for the application
@@ -91,6 +93,7 @@ import { UsersModule } from './modules/users/users.module';
   // Register the main application service provider
   providers: [
     AppService,
+    RealTimeGateway, // Add WebSocket gateway for real-time functionality
     // Apply JWT guard globally to all routes
     // Routes can be made public using @Public() decorator
     {
@@ -103,6 +106,7 @@ import { UsersModule } from './modules/users/users.module';
       useClass: RateLimitGuard,
     },
   ],
+  exports: [RealTimeGateway], // Export WebSocket gateway for use in other modules
 })
 export class AppModule {
   /**
@@ -113,5 +117,6 @@ export class AppModule {
     // Output a message when the AppModule is initialized
     console.log('🏗️  AppModule initialized successfully');
     console.log('🛡️  Security features enabled: Rate Limiting + CAPTCHA');
+    console.log('🔌  Real-time WebSocket functionality enabled');
   }
 }

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { RealTimeGateway } from '../../common/websocket/websocket.gateway';
 import { CaptchaService } from '../captcha/captcha.service';
 import { Form, FormDocument } from '../forms/entities/form.entity';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
@@ -30,6 +31,7 @@ export class SubmissionsService {
     private readonly formModel: Model<FormDocument>,
     private readonly fileUploadService: FileUploadService,
     private readonly captchaService: CaptchaService,
+    private readonly webSocketGateway: RealTimeGateway,
   ) {
     this.logger.log('SubmissionsService initialized');
   }
@@ -93,6 +95,11 @@ export class SubmissionsService {
     const savedSubmission = await submission.save();
 
     this.logger.log(`Submission created: ${savedSubmission.submissionId}`);
+
+    // Emit real-time WebSocket event for new submission
+    if (!submissionDto.isDraft) {
+      this.emitNewSubmissionEvent(savedSubmission, form);
+    }
 
     // Process post-submission actions (notifications, integrations) synchronously
     if (!submissionDto.isDraft) {
@@ -565,5 +572,73 @@ export class SubmissionsService {
       createdAt: (submissionObj.createdAt as Date) || submission.submittedAt,
       updatedAt: (submissionObj.updatedAt as Date) || submission.submittedAt,
     };
+  }
+
+  /**
+   * Emit WebSocket event for new submission
+   * @param submission - The created submission
+   * @param form - The form document
+   */
+  private emitNewSubmissionEvent(submission: SubmissionDocument, form: FormDocument): void {
+    try {
+      const eventData = {
+        formId: (form._id as Types.ObjectId).toString(),
+        submissionId: (submission._id as Types.ObjectId).toString(),
+        submission: submission.data,
+        timestamp: new Date(),
+        userId: submission.submittedBy?.userId?.toString() || 'anonymous',
+        username: submission.submittedBy?.name || submission.submittedBy?.email || 'Anonymous',
+      };
+
+      // Emit the new submission event to all users in the form room
+      this.webSocketGateway.emitNewSubmission(eventData);
+
+      // Also emit analytics update if available
+      this.emitAnalyticsUpdate((form._id as Types.ObjectId).toString());
+
+      this.logger.debug(`WebSocket event emitted for new submission: ${submission.submissionId}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to emit WebSocket event for submission ${submission.submissionId}:`,
+        error,
+      );
+    }
+  }
+
+  /**
+   * Emit analytics update for the form
+   * @param formId - The form ID
+   */
+  private async emitAnalyticsUpdate(formId: string): Promise<void> {
+    try {
+      // Get basic analytics for the form
+      const totalSubmissions = await this.submissionModel.countDocuments({
+        formId: new Types.ObjectId(formId),
+        status: { $ne: 'draft' },
+      });
+
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const todaySubmissions = await this.submissionModel.countDocuments({
+        formId: new Types.ObjectId(formId),
+        status: { $ne: 'draft' },
+        submittedAt: { $gte: todayStart },
+      });
+
+      const analyticsData = {
+        formId,
+        metrics: {
+          totalSubmissions,
+          todaySubmissions,
+          completionRate: 85, // Mock completion rate for now
+          lastSubmissionAt: new Date(),
+        },
+      };
+
+      this.webSocketGateway.emitAnalyticsUpdate(analyticsData);
+    } catch (error) {
+      this.logger.error(`Failed to emit analytics update for form ${formId}:`, error);
+    }
   }
 }

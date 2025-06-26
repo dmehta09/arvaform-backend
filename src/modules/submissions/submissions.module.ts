@@ -4,6 +4,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { v4 as uuid } from 'uuid';
+import { RealTimeGateway } from '../../common/websocket/websocket.gateway';
 import { CaptchaModule } from '../captcha/captcha.module';
 
 import { FormsModule } from '../forms/forms.module';
@@ -61,7 +62,7 @@ import { SubmissionsService } from './submissions.service';
     CaptchaModule,
   ],
   controllers: [SubmissionsController],
-  providers: [SubmissionsService, FileUploadService, ExportService],
+  providers: [SubmissionsService, FileUploadService, ExportService, RealTimeGateway],
   exports: [SubmissionsService, FileUploadService, ExportService],
 })
 export class SubmissionsModule {}
