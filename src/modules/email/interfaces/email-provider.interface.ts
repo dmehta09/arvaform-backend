@@ -64,6 +64,8 @@ export interface EmailSendResult {
   timestamp: Date;
   error?: string;
   retryCount?: number;
+  errorCode?: string;
+  responseCode?: number;
 }
 
 /**
